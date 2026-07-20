@@ -1,55 +1,60 @@
-# PixelFactory Backend
+# PixelFactory
 
-PixelFactory MVP의 Spring Boot 3 기반 백엔드 초기 구성입니다.
+자동차 부품 가공 라인 **OEE 실시간 모니터링** 데모.
+이벤트 기반 컴포저블 구조 — 자세한 목표/원칙/로드맵은 [CLAUDE.md](CLAUDE.md) 참고.
 
-## Stack
+## 구조
 
-- Java 17
-- Spring Boot 3
-- Gradle
-- PostgreSQL
-- Spring Security
-- JWT
-- Spring Data JPA
-- QueryDSL
-- Swagger/OpenAPI
+| 디렉터리 | 역할 | 상태 |
+|---|---|---|
+| `services/oee-service/` | Spring Boot 3 백엔드 (MQTT 수집·이벤트 영속화·API) | 개발 중 |
+| `simulator/` | 설비 시뮬레이터 (MQTT 발행) | 동작 |
+| `web/` | 실시간 OEE 대시보드 | Phase 3 예정 |
+| `infra/` | docker-compose (PostgreSQL, Mosquitto) | — |
+| `docs/` | MQTT 토픽 계약, 백로그 | — |
 
-## Run PostgreSQL
+## 실행 (로컬)
 
-```bash
-docker compose up -d postgres
-```
-
-## Run Backend
-
-Gradle Wrapper로 실행합니다.
-
-```bash
-./gradlew bootRun
-```
-
-Windows PowerShell:
+요구 사항: Docker Desktop, JDK 17
 
 ```powershell
+# 1. PostgreSQL + Mosquitto 기동
+cd infra
+docker compose up -d
+
+# 2. 백엔드 실행 (포트 8081) — 첫 기동 시 Flyway 마이그레이션 + 데모 유저 시드
+cd ..\services\oee-service
 .\gradlew.bat bootRun
+
+# 3. (별도 터미널) 시뮬레이터 실행 — 설비 3대가 MQTT로 이벤트 발행
+cd simulator
+.\gradlew.bat run
 ```
 
-Swagger UI:
+- Swagger UI: http://localhost:8081/swagger-ui.html
+- Health: `GET http://localhost:8081/api/health`
+- 이벤트 확인: `GET /api/events/recent`, 설비 상태: `GET /api/equipments`
+- **OEE 조회**: `GET /api/oee/equipments`, `/api/oee/equipments/{id}`, `/api/oee/lines/{id}`
+  - 윈도우: `?lastMinutes=60`(기본) 또는 `?date=2026-07-20&shift=DAY` (NIGHT 00-08 / DAY 08-16 / EVENING 16-24)
+- **실시간 스트림**: `ws://localhost:8081/ws/stream` — `{"type":"event"|"oee","data":...}`
+  (event: FactoryEvent 즉시 push, oee: 5초 주기 최근 60분 스냅샷)
+- MQTT 토픽 계약: [docs/mqtt-topics.md](docs/mqtt-topics.md)
+- 시뮬레이터 배속: `SIM_SPEED` 환경변수 (기본 10배속).
+  배속 상태에서는 사이클이 실제보다 촘촘히 발행되므로 OEE Performance가 1.0으로
+  포화된다 — 현실적인 수치를 보려면 `SIM_SPEED=1`.
 
-```text
-http://localhost:8080/swagger-ui.html
-```
+## 데모 계정
 
-Health Check:
+비밀번호는 모두 `password` (첫 기동 시 자동 시드).
 
-```text
-GET http://localhost:8080/api/health
-```
-
-Mock Login:
+| username | 롤 |
+|---|---|
+| `admin` | ADMIN |
+| `inspector` | INSPECTOR |
+| `operator` | OPERATOR |
 
 ```http
-POST http://localhost:8080/api/auth/login
+POST http://localhost:8081/api/auth/login
 Content-Type: application/json
 
 {
@@ -57,15 +62,3 @@ Content-Type: application/json
   "password": "password"
 }
 ```
-
-## Mock Users
-
-현재 로그인은 MVP 초기 Mock입니다.
-
-- `admin` → `ADMIN`
-- `qms` → `QMS_MANAGER`
-- `inspector` → `INSPECTOR`
-- `warehouse` → `WAREHOUSE_OPERATOR`
-- 그 외 → `OPERATOR`
-
-TODO: 다음 단계에서 실제 UserRepository + PasswordEncoder 기반 인증으로 교체합니다.
