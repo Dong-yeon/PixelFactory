@@ -62,6 +62,10 @@ public final class FactorySimulator {
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             pool.shutdownNow();
+            // 종료를 IDLE로 알리지 않으면 OEE 계산이 설비를 계속 RUNNING으로 본다.
+            for (EquipmentSpec spec : EQUIPMENTS) {
+                publishStatus(client, spec, "IDLE", "SIMULATOR_STOPPED");
+            }
             try {
                 client.disconnect();
                 client.close();

@@ -34,8 +34,14 @@ cd simulator
 - Swagger UI: http://localhost:8081/swagger-ui.html
 - Health: `GET http://localhost:8081/api/health`
 - 이벤트 확인: `GET /api/events/recent`, 설비 상태: `GET /api/equipments`
+- **OEE 조회**: `GET /api/oee/equipments`, `/api/oee/equipments/{id}`, `/api/oee/lines/{id}`
+  - 윈도우: `?lastMinutes=60`(기본) 또는 `?date=2026-07-20&shift=DAY` (NIGHT 00-08 / DAY 08-16 / EVENING 16-24)
+- **실시간 스트림**: `ws://localhost:8081/ws/stream` — `{"type":"event"|"oee","data":...}`
+  (event: FactoryEvent 즉시 push, oee: 5초 주기 최근 60분 스냅샷)
 - MQTT 토픽 계약: [docs/mqtt-topics.md](docs/mqtt-topics.md)
-- 시뮬레이터 배속: `SIM_SPEED` 환경변수 (기본 10배속)
+- 시뮬레이터 배속: `SIM_SPEED` 환경변수 (기본 10배속).
+  배속 상태에서는 사이클이 실제보다 촘촘히 발행되므로 OEE Performance가 1.0으로
+  포화된다 — 현실적인 수치를 보려면 `SIM_SPEED=1`.
 
 ## 데모 계정
 
