@@ -50,6 +50,9 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // TestRestTemplate의 기본 요청 팩토리(JDK HttpURLConnection)는 PATCH를 지원하지 않는다 —
+    // 이게 클래스패스에 있으면 Spring Boot가 자동으로 골라 쓴다.
+    testImplementation 'org.apache.httpcomponents.client5:httpclient5'
 
     testImplementation platform('org.testcontainers:testcontainers-bom:1.20.1')
     testImplementation 'org.testcontainers:junit-jupiter'
