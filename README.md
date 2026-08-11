@@ -9,9 +9,9 @@
 |---|---|---|
 | `services/oee-service/` | Spring Boot 3 백엔드 (MQTT 수집·OEE 계산·실시간 push·API) | 개발 중 |
 | `simulator/` | 설비 시뮬레이터 (MQTT 발행) | 동작 |
-| `web/` | 실시간 OEE 대시보드 | Phase 3 예정 |
+| `web/` | 실시간 OEE 대시보드 (React + Vite, STOMP) | 동작 |
 | `infra/` | docker-compose (PostgreSQL, Mosquitto) | — |
-| `docs/` | MQTT 토픽 계약, 백로그 | — |
+| `docs/` | MQTT 토픽 계약, 배포 가이드, 백로그 | — |
 
 ## 실행 (로컬)
 
@@ -29,6 +29,11 @@ cd ..\services\oee-service
 # 3. (별도 터미널) 시뮬레이터 실행 — 설비 3대가 MQTT로 이벤트 발행
 cd simulator
 .\gradlew.bat run
+
+# 4. (별도 터미널) 대시보드 실행 — http://localhost:5173
+cd web
+npm install
+npm run dev
 ```
 
 - Swagger UI: http://localhost:8081/swagger-ui.html
@@ -52,6 +57,10 @@ cd simulator
 - 엔드포인트: `ws://localhost:8081/ws`
 - `/topic/events` — FactoryEvent 실시간 스트림 (영속화 커밋 후 push)
 - `/topic/oee` — OEE 요약 스냅샷 (기본 5초 주기, `oee.push-interval-ms`)
+
+## 배포 (Railway)
+
+각 서비스에 Dockerfile 포함. 절차는 [docs/deploy-railway.md](docs/deploy-railway.md) 참고.
 
 ## 데모 계정
 

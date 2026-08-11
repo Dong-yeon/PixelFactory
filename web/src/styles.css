@@ -1,0 +1,523 @@
+/* 디자인 토큰 — dataviz 참조 팔레트 (light/dark 모두 검증된 스텝) */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --hairline: #e1e0d9;
+  --baseline: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --accent: #2a78d6;
+  --accent-strong: #1c5cab;
+  --meter-track: #cde2fb;
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --delta-good: #006300;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --hairline: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --accent: #3987e5;
+    --accent-strong: #6da7ec;
+    --meter-track: #184f95;
+    --delta-good: #0ca30c;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+button {
+  font: inherit;
+}
+
+/* ---------- 헤더 ---------- */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--hairline);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.app-header h1 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.app-header .shift-info {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.app-header .spacer {
+  flex: 1;
+}
+
+.live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.live-indicator .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.live-indicator.connected .dot {
+  background: var(--status-good);
+}
+
+.user-chip {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+/* ---------- 레이아웃 ---------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 16px;
+  padding: 16px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 1100px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.card h2 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.card .subtitle {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0 0 12px;
+}
+
+/* ---------- 라인 카드 / 히어로 ---------- */
+
+.line-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hero-figure {
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 1.1;
+  margin: 6px 0 2px;
+}
+
+.hero-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.line-stats {
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+  color: var(--ink-2);
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.line-stats strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.line-grid {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .line-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.equipment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.equipment-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.equipment-card .eq-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.equipment-card .eq-code {
+  font-weight: 600;
+}
+
+.equipment-card .eq-name {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.equipment-card .eq-oee {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.equipment-card .eq-counts {
+  color: var(--ink-2);
+  font-size: 12px;
+}
+
+/* ---------- 미터 (A/P/Q) ---------- */
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 8px;
+}
+
+.meter .meter-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.meter .meter-value {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.meter .track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--meter-track);
+  overflow: hidden;
+}
+
+.meter .fill {
+  height: 100%;
+  border-radius: 4px 0 0 4px;
+  background: var(--accent);
+  transition: width 0.6s ease;
+}
+
+.meter.small .track {
+  height: 6px;
+}
+
+/* ---------- 상태/심각도 배지 (아이콘 + 라벨, 색상 단독 의존 금지) ---------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.badge .icon {
+  font-size: 10px;
+  line-height: 1;
+}
+
+.badge.st-RUNNING .icon { color: var(--status-good); }
+.badge.st-IDLE .icon { color: var(--muted); }
+.badge.st-DOWN .icon { color: var(--status-critical); }
+.badge.st-QUALITY_HOLD .icon { color: var(--status-warning); }
+
+.badge.sv-INFO .icon { color: var(--muted); }
+.badge.sv-SUCCESS .icon { color: var(--status-good); }
+.badge.sv-WARNING .icon { color: var(--status-warning); }
+.badge.sv-ERROR .icon { color: var(--status-critical); }
+
+/* ---------- 이벤트 타임라인 ---------- */
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  max-height: 640px;
+  overflow-y: auto;
+}
+
+.timeline-row {
+  display: grid;
+  grid-template-columns: 52px 92px minmax(0, 1fr);
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--hairline);
+  align-items: start;
+}
+
+.timeline-row:last-child {
+  border-bottom: none;
+}
+
+.timeline-row .time {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  padding-top: 2px;
+}
+
+.timeline-row .message {
+  font-size: 13px;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.timeline-row .lot {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ---------- 작업지시 패널 ---------- */
+
+.wo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.wo-table th {
+  text-align: left;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--baseline);
+}
+
+.wo-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: middle;
+}
+
+.wo-table .qty {
+  font-variant-numeric: tabular-nums;
+}
+
+.wo-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: var(--baseline);
+}
+
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.btn.primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---------- 폼 ---------- */
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.field label {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.field input,
+.field select {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--baseline);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: inherit;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.form-footer {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.error-text {
+  color: var(--status-critical);
+  font-size: 12px;
+}
+
+details.wo-create summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 13px;
+  user-select: none;
+}
+
+/* ---------- 인라인 수량 입력 (생산완료) ---------- */
+
+.inline-complete {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.inline-complete input {
+  width: 70px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--baseline);
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+
+/* ---------- 로그인 ---------- */
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.login-card {
+  width: 340px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.login-card .hint {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0;
+}
+
+.empty-note {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 12px 0;
+}

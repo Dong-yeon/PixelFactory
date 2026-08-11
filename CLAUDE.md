@@ -55,7 +55,8 @@ simulator ──MQTT──▶ [Mosquitto broker] ──▶ oee-service ──Web
   설비/라인 마스터 엔티티, Flyway 도입, 실제 인증(User + PasswordEncoder)으로 Mock 교체 ✅
 - **Phase 2** — OEE 계산 엔진(설비/라인/시프트 단위), WebSocket 실시간 push
   (`/topic/events`, `/topic/oee`), 사이클↔작업지시 연결, 작업지시↔설비 상태 정합성 ✅
-- **Phase 3** — web 대시보드(실시간 OEE, 이벤트 타임라인, 작업지시 조작), Railway 배포
+- **Phase 3** — web 대시보드(실시간 OEE, 이벤트 타임라인, 작업지시 조작) ✅,
+  Railway 배포 준비물(서비스별 Dockerfile, `docs/deploy-railway.md`) ✅ — 실배포는 수동 진행
 - **Phase 4** — ai-service (AI_ANOMALY_DETECTED 발행 주체)
 
 ## 개발 환경
