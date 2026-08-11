@@ -1,0 +1,91 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.5'
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+
+group = 'com.pixelfactory'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
+    annotationProcessor 'com.querydsl:querydsl-apt:5.1.0:jakarta'
+    annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+    annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+
+    implementation 'org.flywaydb:flyway-core'
+    runtimeOnly 'org.flywaydb:flyway-database-postgresql'
+
+    implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
+
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    runtimeOnly 'org.postgresql:postgresql'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // TestRestTemplate의 기본 요청 팩토리(JDK HttpURLConnection)는 PATCH를 지원하지 않는다 —
+    // 이게 클래스패스에 있으면 Spring Boot가 자동으로 골라 쓴다.
+    testImplementation 'org.apache.httpcomponents.client5:httpclient5'
+
+    testImplementation platform('org.testcontainers:testcontainers-bom:1.20.1')
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.awaitility:awaitility:4.2.2'
+    // Paho/Jackson come from the `implementation` config above — testImplementation extends it.
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    // Gradle's forked test JVM doesn't reliably inherit env vars set just before invoking
+    // gradlew on Windows — pass DOCKER_HOST through explicitly so Testcontainers can see
+    // an override (e.g. tcp://localhost:2375) when the default npipe strategy doesn't work.
+    def dockerHost = System.getenv('DOCKER_HOST')
+    if (dockerHost) {
+        environment 'DOCKER_HOST', dockerHost
+    }
+}
+
+def querydslDir = layout.buildDirectory.dir('generated/querydsl').get().asFile
+
+tasks.withType(JavaCompile).configureEach {
+    options.generatedSourceOutputDirectory = querydslDir
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs += querydslDir
+        }
+    }
+}
+
+clean {
+    delete querydslDir
+}
