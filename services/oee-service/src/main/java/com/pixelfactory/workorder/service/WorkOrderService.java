@@ -1,7 +1,11 @@
 package com.pixelfactory.workorder.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pixelfactory.common.exception.BusinessException;
 import com.pixelfactory.common.exception.ErrorCode;
+import com.pixelfactory.equipment.domain.EquipmentStatus;
+import com.pixelfactory.equipment.service.EquipmentService;
 import com.pixelfactory.event.domain.EventSeverity;
 import com.pixelfactory.event.domain.FactoryEventType;
 import com.pixelfactory.event.domain.SourceType;
@@ -16,6 +20,7 @@ import com.pixelfactory.workorder.dto.WorkOrderResponse;
 import com.pixelfactory.workorder.repository.WorkOrderRepository;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,13 +30,19 @@ public class WorkOrderService {
 
     private final WorkOrderRepository workOrderRepository;
     private final FactoryEventService factoryEventService;
+    private final EquipmentService equipmentService;
+    private final ObjectMapper objectMapper;
 
     public WorkOrderService(
             WorkOrderRepository workOrderRepository,
-            FactoryEventService factoryEventService
+            FactoryEventService factoryEventService,
+            EquipmentService equipmentService,
+            ObjectMapper objectMapper
     ) {
         this.workOrderRepository = workOrderRepository;
         this.factoryEventService = factoryEventService;
+        this.equipmentService = equipmentService;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional
@@ -80,6 +91,13 @@ public class WorkOrderService {
                 .toList();
     }
 
+    public Optional<WorkOrder> findActiveByEquipmentId(Long equipmentId) {
+        return workOrderRepository.findFirstByEquipmentIdAndStatusOrderByStartedAtDesc(
+                equipmentId,
+                WorkOrderStatus.IN_PROGRESS
+        );
+    }
+
     @Transactional
     public WorkOrderResponse start(Long id) {
         WorkOrder workOrder = getWorkOrder(id);
@@ -93,13 +111,7 @@ public class WorkOrderService {
                 "Work order started: " + workOrder.getWorkOrderNo(),
                 workOrderPayload(workOrder)
         );
-        recordEquipmentEvent(
-                workOrder,
-                FactoryEventType.EQUIPMENT_STATUS_CHANGED,
-                EventSeverity.INFO,
-                "Equipment changed to RUNNING for work order: " + workOrder.getWorkOrderNo(),
-                "{\"equipmentStatus\":\"RUNNING\"}"
-        );
+        changeEquipmentStatus(workOrder, EquipmentStatus.RUNNING, EventSeverity.INFO);
         return WorkOrderResponse.from(workOrder);
     }
 
@@ -117,6 +129,7 @@ public class WorkOrderService {
                 "Production completed: " + workOrder.getWorkOrderNo(),
                 productionPayload(workOrder)
         );
+        changeEquipmentStatus(workOrder, EquipmentStatus.IDLE, EventSeverity.INFO);
         return WorkOrderResponse.from(workOrder);
     }
 
@@ -133,13 +146,7 @@ public class WorkOrderService {
                 "Work order on hold: " + workOrder.getWorkOrderNo(),
                 holdPayload(workOrder)
         );
-        recordEquipmentEvent(
-                workOrder,
-                FactoryEventType.EQUIPMENT_STATUS_CHANGED,
-                EventSeverity.WARNING,
-                "Equipment changed to QUALITY_HOLD for work order: " + workOrder.getWorkOrderNo(),
-                "{\"equipmentStatus\":\"QUALITY_HOLD\"}"
-        );
+        changeEquipmentStatus(workOrder, EquipmentStatus.QUALITY_HOLD, EventSeverity.WARNING);
         return WorkOrderResponse.from(workOrder);
     }
 
@@ -156,6 +163,7 @@ public class WorkOrderService {
                 "Work order completed: " + workOrder.getWorkOrderNo(),
                 workOrderPayload(workOrder)
         );
+        changeEquipmentStatus(workOrder, EquipmentStatus.IDLE, EventSeverity.INFO);
         return WorkOrderResponse.from(workOrder);
     }
 
@@ -209,6 +217,19 @@ public class WorkOrderService {
         }
     }
 
+    // Keeps the equipments master in sync with the EQUIPMENT_STATUS_CHANGED event it records —
+    // the event stream and the master table must never disagree.
+    private void changeEquipmentStatus(WorkOrder workOrder, EquipmentStatus status, EventSeverity severity) {
+        equipmentService.changeStatus(workOrder.getEquipmentId(), status);
+        recordEquipmentEvent(
+                workOrder,
+                FactoryEventType.EQUIPMENT_STATUS_CHANGED,
+                severity,
+                "Equipment changed to " + status + " for work order: " + workOrder.getWorkOrderNo(),
+                statusPayload(status)
+        );
+    }
+
     private void recordWorkOrderEvent(
             WorkOrder workOrder,
             FactoryEventType eventType,
@@ -251,35 +272,36 @@ public class WorkOrderService {
         );
     }
 
+    private String statusPayload(EquipmentStatus status) {
+        ObjectNode payload = objectMapper.createObjectNode();
+        payload.put("status", status.name());
+        return payload.toString();
+    }
+
     private String workOrderPayload(WorkOrder workOrder) {
-        return "{\"workOrderNo\":\"" + workOrder.getWorkOrderNo()
-                + "\",\"status\":\"" + workOrder.getStatus()
-                + "\",\"equipmentId\":" + workOrder.getEquipmentId()
-                + ",\"assignedUserId\":" + workOrder.getAssignedUserId()
-                + "}";
+        ObjectNode payload = objectMapper.createObjectNode();
+        payload.put("workOrderNo", workOrder.getWorkOrderNo());
+        payload.put("status", workOrder.getStatus().name());
+        payload.put("equipmentId", workOrder.getEquipmentId());
+        payload.put("assignedUserId", workOrder.getAssignedUserId());
+        return payload.toString();
     }
 
     private String productionPayload(WorkOrder workOrder) {
-        return "{\"workOrderNo\":\"" + workOrder.getWorkOrderNo()
-                + "\",\"status\":\"" + workOrder.getStatus()
-                + "\",\"plannedQty\":" + workOrder.getPlannedQty()
-                + ",\"producedQty\":" + workOrder.getProducedQty()
-                + ",\"defectQty\":" + workOrder.getDefectQty()
-                + "}";
+        ObjectNode payload = objectMapper.createObjectNode();
+        payload.put("workOrderNo", workOrder.getWorkOrderNo());
+        payload.put("status", workOrder.getStatus().name());
+        payload.put("plannedQty", workOrder.getPlannedQty());
+        payload.put("producedQty", workOrder.getProducedQty());
+        payload.put("defectQty", workOrder.getDefectQty());
+        return payload.toString();
     }
 
     private String holdPayload(WorkOrder workOrder) {
-        return "{\"workOrderNo\":\"" + workOrder.getWorkOrderNo()
-                + "\",\"status\":\"" + workOrder.getStatus()
-                + "\",\"holdReason\":\"" + sanitizeJsonValue(workOrder.getHoldReason())
-                + "\"}";
-    }
-
-    private String sanitizeJsonValue(String value) {
-        if (value == null) {
-            return "";
-        }
-
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
+        ObjectNode payload = objectMapper.createObjectNode();
+        payload.put("workOrderNo", workOrder.getWorkOrderNo());
+        payload.put("status", workOrder.getStatus().name());
+        payload.put("holdReason", workOrder.getHoldReason());
+        return payload.toString();
     }
 }

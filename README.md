@@ -7,7 +7,7 @@
 
 | 디렉터리 | 역할 | 상태 |
 |---|---|---|
-| `services/oee-service/` | Spring Boot 3 백엔드 (MQTT 수집·이벤트 영속화·API) | 개발 중 |
+| `services/oee-service/` | Spring Boot 3 백엔드 (MQTT 수집·OEE 계산·실시간 push·API) | 개발 중 |
 | `simulator/` | 설비 시뮬레이터 (MQTT 발행) | 동작 |
 | `web/` | 실시간 OEE 대시보드 | Phase 3 예정 |
 | `infra/` | docker-compose (PostgreSQL, Mosquitto) | — |
@@ -36,6 +36,22 @@ cd simulator
 - 이벤트 확인: `GET /api/events/recent`, 설비 상태: `GET /api/equipments`
 - MQTT 토픽 계약: [docs/mqtt-topics.md](docs/mqtt-topics.md)
 - 시뮬레이터 배속: `SIM_SPEED` 환경변수 (기본 10배속)
+
+## OEE API (Phase 2)
+
+`from`/`to`(ISO datetime)를 생략하면 **현재 시프트**(06/14/22시 3교대) 구간으로 계산한다.
+
+| 엔드포인트 | 설명 |
+|---|---|
+| `GET /api/oee/summary` | 전체 라인 OEE 스냅샷 (라인별 + 설비별 A×P×Q) |
+| `GET /api/oee/lines/{lineId}` | 라인 단위 OEE |
+| `GET /api/oee/equipments/{equipmentId}` | 설비 단위 OEE |
+
+## 실시간 push (WebSocket / STOMP)
+
+- 엔드포인트: `ws://localhost:8081/ws`
+- `/topic/events` — FactoryEvent 실시간 스트림 (영속화 커밋 후 push)
+- `/topic/oee` — OEE 요약 스냅샷 (기본 5초 주기, `oee.push-interval-ms`)
 
 ## 데모 계정
 

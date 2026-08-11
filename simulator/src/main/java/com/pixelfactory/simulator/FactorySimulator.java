@@ -37,6 +37,7 @@ public final class FactorySimulator {
 
     private static final double DEFECT_RATE = 0.03;
     private static final double BREAKDOWN_RATE = 0.02;
+    private static final double PLANNED_STOP_RATE = 0.03;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -86,6 +87,11 @@ public final class FactorySimulator {
                 if (random.nextDouble() < BREAKDOWN_RATE) {
                     publishStatus(client, spec, "DOWN", "BREAKDOWN");
                     Thread.sleep((long) ((15000 + random.nextInt(30000)) / speed));
+                    publishStatus(client, spec, "RUNNING", null);
+                } else if (random.nextDouble() < PLANNED_STOP_RATE) {
+                    // Planned stop (tool change, material wait) — keeps availability data varied.
+                    publishStatus(client, spec, "IDLE", "PLANNED_STOP");
+                    Thread.sleep((long) ((20000 + random.nextInt(20000)) / speed));
                     publishStatus(client, spec, "RUNNING", null);
                 }
             }

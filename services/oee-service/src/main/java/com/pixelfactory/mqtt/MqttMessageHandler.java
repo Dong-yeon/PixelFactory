@@ -10,6 +10,8 @@ import com.pixelfactory.event.domain.FactoryEventType;
 import com.pixelfactory.event.domain.SourceType;
 import com.pixelfactory.event.domain.TargetType;
 import com.pixelfactory.event.service.FactoryEventService;
+import com.pixelfactory.workorder.domain.WorkOrder;
+import com.pixelfactory.workorder.service.WorkOrderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,15 +24,18 @@ public class MqttMessageHandler {
 
     private final EquipmentService equipmentService;
     private final FactoryEventService factoryEventService;
+    private final WorkOrderService workOrderService;
     private final ObjectMapper objectMapper;
 
     public MqttMessageHandler(
             EquipmentService equipmentService,
             FactoryEventService factoryEventService,
+            WorkOrderService workOrderService,
             ObjectMapper objectMapper
     ) {
         this.equipmentService = equipmentService;
         this.factoryEventService = factoryEventService;
+        this.workOrderService = workOrderService;
         this.objectMapper = objectMapper;
     }
 
@@ -97,14 +102,20 @@ public class MqttMessageHandler {
     private void handleCycle(String equipmentCode, Long equipmentId, JsonNode json, String payload) {
         boolean defect = json.path("defect").asBoolean(false);
 
+        // Attach the running work order at ingestion time so cycle events can be traced
+        // back to a work order / lot without the simulator knowing about work orders.
+        WorkOrder activeWorkOrder = equipmentId == null
+                ? null
+                : workOrderService.findActiveByEquipmentId(equipmentId).orElse(null);
+
         factoryEventService.record(
                 FactoryEventType.CYCLE_COMPLETED,
                 SourceType.EQUIPMENT,
                 equipmentId,
                 TargetType.EQUIPMENT,
                 equipmentId,
-                null,
-                null,
+                activeWorkOrder == null ? null : activeWorkOrder.getId(),
+                activeWorkOrder == null ? null : activeWorkOrder.getLotNo(),
                 defect ? EventSeverity.WARNING : EventSeverity.INFO,
                 (defect ? "Defect cycle completed: " : "Cycle completed: ") + equipmentCode,
                 payload

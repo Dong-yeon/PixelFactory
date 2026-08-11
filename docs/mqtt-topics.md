@@ -37,8 +37,18 @@ oee-service는 `factory/#`를 QoS 1로 구독한다.
 - `defect`: 불량 여부 — OEE Quality 계산 입력
 - 처리: `CYCLE_COMPLETED` 이벤트 기록 (defect=true → WARNING)
 
-## OEE 계산과의 관계 (Phase 2)
+## OEE 계산과의 관계
 
-- **Availability** = 가동 시간 / 계획 시간 ← `status` 이벤트의 RUNNING/DOWN 구간
-- **Performance** = (이상 사이클타임 × 생산수) / 가동 시간 ← `cycle` 수 × equipments.ideal_cycle_time_ms
-- **Quality** = 양품 수 / 생산 수 ← `cycle`의 defect 비율
+`GET /api/oee/*`가 이벤트 스트림에서 window 단위로 즉석 계산한다 (기본 window = 현재 시프트, 06/14/22시 3교대).
+
+- **Availability** = RUNNING 시간 / 계획 시간 ← `status` 이벤트로 만든 상태 타임라인
+  (window 직전 마지막 상태 이벤트가 초기 상태, 없으면 IDLE)
+- **Performance** = Σ(이상 사이클타임 × 사이클 수) / Σ(실제 `cycleTimeMs`)
+  — 실제 사이클타임 합 기준이라 시뮬레이터 배속(`SIM_SPEED`)과 무관하게 성립. 100% 캡.
+- **Quality** = (전체 사이클 - 불량 사이클) / 전체 사이클 ← `cycle`의 defect 비율
+
+### 사이클 ↔ 작업지시 연결
+
+`cycle` 페이로드에는 작업지시 정보가 없다(시뮬레이터는 작업지시를 모른다).
+oee-service가 수집 시점에 해당 설비의 IN_PROGRESS 작업지시를 조회해서
+`CYCLE_COMPLETED` 이벤트에 workOrderId/lotNo를 붙인다.

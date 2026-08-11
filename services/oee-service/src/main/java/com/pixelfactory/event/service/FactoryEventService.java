@@ -9,6 +9,7 @@ import com.pixelfactory.event.dto.FactoryEventCreateRequest;
 import com.pixelfactory.event.dto.FactoryEventResponse;
 import com.pixelfactory.event.repository.FactoryEventRepository;
 import java.util.List;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,9 +22,14 @@ public class FactoryEventService {
     private static final int MAX_RECENT_LIMIT = 100;
 
     private final FactoryEventRepository factoryEventRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public FactoryEventService(FactoryEventRepository factoryEventRepository) {
+    public FactoryEventService(
+            FactoryEventRepository factoryEventRepository,
+            ApplicationEventPublisher eventPublisher
+    ) {
         this.factoryEventRepository = factoryEventRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -41,7 +47,7 @@ public class FactoryEventService {
                 request.payloadJson()
         );
 
-        return FactoryEventResponse.from(factoryEventRepository.save(event));
+        return saveAndPublish(event);
     }
 
     @Transactional
@@ -70,7 +76,15 @@ public class FactoryEventService {
                 payloadJson
         );
 
-        return FactoryEventResponse.from(factoryEventRepository.save(event));
+        return saveAndPublish(event);
+    }
+
+    // The in-process event lets the WebSocket layer push after commit without this
+    // service knowing anything about push channels.
+    private FactoryEventResponse saveAndPublish(FactoryEvent event) {
+        FactoryEventResponse response = FactoryEventResponse.from(factoryEventRepository.save(event));
+        eventPublisher.publishEvent(new FactoryEventRecordedEvent(response));
+        return response;
     }
 
     public List<FactoryEventResponse> getRecent(Integer limit) {
