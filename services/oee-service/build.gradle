@@ -50,10 +50,23 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    testImplementation platform('org.testcontainers:testcontainers-bom:1.20.1')
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.awaitility:awaitility:4.2.2'
+    // Paho/Jackson come from the `implementation` config above — testImplementation extends it.
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+    // Gradle's forked test JVM doesn't reliably inherit env vars set just before invoking
+    // gradlew on Windows — pass DOCKER_HOST through explicitly so Testcontainers can see
+    // an override (e.g. tcp://localhost:2375) when the default npipe strategy doesn't work.
+    def dockerHost = System.getenv('DOCKER_HOST')
+    if (dockerHost) {
+        environment 'DOCKER_HOST', dockerHost
+    }
 }
 
 def querydslDir = layout.buildDirectory.dir('generated/querydsl').get().asFile

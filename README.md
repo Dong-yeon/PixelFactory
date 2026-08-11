@@ -1,5 +1,10 @@
 # PixelFactory
 
+[![oee-service CI](https://github.com/Dong-yeon/PixelFactory/actions/workflows/oee-service-ci.yml/badge.svg)](https://github.com/Dong-yeon/PixelFactory/actions/workflows/oee-service-ci.yml)
+[![simulator CI](https://github.com/Dong-yeon/PixelFactory/actions/workflows/simulator-ci.yml/badge.svg)](https://github.com/Dong-yeon/PixelFactory/actions/workflows/simulator-ci.yml)
+[![ai-service CI](https://github.com/Dong-yeon/PixelFactory/actions/workflows/ai-service-ci.yml/badge.svg)](https://github.com/Dong-yeon/PixelFactory/actions/workflows/ai-service-ci.yml)
+[![web CI](https://github.com/Dong-yeon/PixelFactory/actions/workflows/web-ci.yml/badge.svg)](https://github.com/Dong-yeon/PixelFactory/actions/workflows/web-ci.yml)
+
 자동차 부품 가공 라인 **OEE 실시간 모니터링** 데모.
 이벤트 기반 컴포저블 구조 — 자세한 목표/원칙/로드맵은 [CLAUDE.md](CLAUDE.md) 참고.
 
@@ -74,6 +79,15 @@ factory_events는 계속 쌓이므로 상시 운영을 위해 매시 10분에 �
   보존기간(기본 7일, `EVENT_RETENTION_DAYS`) 경과 시 삭제.
   작업지시 이력과 `AI_ANOMALY_DETECTED`는 보존하고, 상태 이벤트는 설비별 최신
   1건을 남겨 OEE의 "window 직전 상태" 조회가 깨지지 않게 한다.
+
+## 테스트
+
+- `services/oee-service`: 단위 테스트 + Testcontainers 통합 테스트(Postgres+Mosquitto 실제 컨테이너로
+  MQTT 수집→OEE 계산, 작업지시 상태머신, 롤업/보존 정책을 REST 계약으로 검증). `.\gradlew.bat test`
+  — 로컬 Docker Desktop 환경에 따라 Testcontainers 접속이 막힐 수 있다(Windows named pipe 클라이언트
+  제한 사례 있었음); 안 되면 CI(GitHub Actions, ubuntu-latest)에서 확인한다.
+- `ai-service`: `CycleAnomalyDetector` 단위 테스트.
+- CI는 서비스별로 분리되어 변경된 디렉터리에 해당하는 워크플로우만 돈다 (위 배지 참고).
 
 ## 배포 (Railway)
 

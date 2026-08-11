@@ -1,0 +1,17 @@
+# 통합 테스트 프로파일 — local 프로파일의 debug SQL 로깅만 끄고 나머지는 그대로 상속.
+# spring.datasource.*와 mqtt.broker-url은 AbstractIntegrationTest가 @DynamicPropertySource로
+# Testcontainers 컨테이너 주소를 주입한다.
+spring:
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    org.hibernate.SQL: warn
+    org.hibernate.orm.jdbc.bind: warn
+
+# 스케줄 유지보수가 테스트 도중 끼어들지 않도록 끄고, 유지보수 테스트는
+# POST /api/oee/maintenance/run으로 직접 트리거한다.
+oee:
+  maintenance:
+    enabled: false

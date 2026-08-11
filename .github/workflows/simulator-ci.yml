@@ -1,0 +1,35 @@
+name: simulator CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "simulator/**"
+      - ".github/workflows/simulator-ci.yml"
+  pull_request:
+    paths:
+      - "simulator/**"
+      - ".github/workflows/simulator-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: simulator
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Run gradlew
+        run: chmod +x gradlew
+
+      - name: Build
+        run: ./gradlew build
