@@ -9,6 +9,7 @@
 |---|---|---|
 | `services/oee-service/` | Spring Boot 3 백엔드 (MQTT 수집·OEE 계산·실시간 push·API) | 개발 중 |
 | `simulator/` | 설비 시뮬레이터 (MQTT 발행) | 동작 |
+| `ai-service/` | AI 이상 감지 — cycle 스트림 구독, anomaly 발행 | 동작 |
 | `web/` | 실시간 OEE 대시보드 (React + Vite, STOMP) | 동작 |
 | `infra/` | docker-compose (PostgreSQL, Mosquitto) | — |
 | `docs/` | MQTT 토픽 계약, 배포 가이드, 백로그 | — |
@@ -30,7 +31,11 @@ cd ..\services\oee-service
 cd simulator
 .\gradlew.bat run
 
-# 4. (별도 터미널) 대시보드 실행 — http://localhost:5173
+# 4. (별도 터미널) AI 이상 감지 실행 — cycle 구독, anomaly 발행
+cd ai-service
+.\gradlew.bat run
+
+# 5. (별도 터미널) 대시보드 실행 — http://localhost:5173
 cd web
 npm install
 npm run dev

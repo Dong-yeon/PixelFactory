@@ -38,6 +38,7 @@ public final class FactorySimulator {
     private static final double DEFECT_RATE = 0.03;
     private static final double BREAKDOWN_RATE = 0.02;
     private static final double PLANNED_STOP_RATE = 0.03;
+    private static final double ABNORMAL_CYCLE_RATE = 0.02;
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -78,7 +79,10 @@ public final class FactorySimulator {
 
         try {
             while (!Thread.currentThread().isInterrupted()) {
-                int cycleTimeMs = (int) (spec.idealCycleTimeMs() * (0.9 + random.nextDouble() * 0.4));
+                // Rare abnormal cycle (tool wear, chip jam) — ai-service z-score detection target.
+                int cycleTimeMs = random.nextDouble() < ABNORMAL_CYCLE_RATE
+                        ? (int) (spec.idealCycleTimeMs() * (1.7 + random.nextDouble() * 0.5))
+                        : (int) (spec.idealCycleTimeMs() * (0.9 + random.nextDouble() * 0.4));
                 Thread.sleep((long) (cycleTimeMs / speed));
 
                 boolean defect = random.nextDouble() < DEFECT_RATE;

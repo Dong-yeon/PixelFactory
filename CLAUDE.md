@@ -18,6 +18,7 @@ simulator ──MQTT──▶ [Mosquitto broker] ──▶ oee-service ──Web
 |---|---|
 | `services/oee-service/` | Spring Boot 3 백엔드 — 이벤트 수집·영속화, OEE 계산, REST/WebSocket API |
 | `simulator/` | 가공 설비 시뮬레이터 — 사이클타임/상태/불량 이벤트를 MQTT로 발행 |
+| `ai-service/` | AI 이상 감지 — cycle 구독, z-score/불량 버스트 판정, anomaly 발행 |
 | `web/` | 실시간 OEE 대시보드 + 작업지시 조작 UI |
 | `infra/` | docker-compose (PostgreSQL, Mosquitto), 배포 설정 |
 | `docs/` | 백로그, 설계 문서 |
@@ -57,7 +58,8 @@ simulator ──MQTT──▶ [Mosquitto broker] ──▶ oee-service ──Web
   (`/topic/events`, `/topic/oee`), 사이클↔작업지시 연결, 작업지시↔설비 상태 정합성 ✅
 - **Phase 3** — web 대시보드(실시간 OEE, 이벤트 타임라인, 작업지시 조작) ✅,
   Railway 배포 준비물(서비스별 Dockerfile, `docs/deploy-railway.md`) ✅ — 실배포는 수동 진행
-- **Phase 4** — ai-service (AI_ANOMALY_DETECTED 발행 주체)
+- **Phase 4** — ai-service: cycle 스트림 구독 → z-score 스파이크/불량 버스트 감지 →
+  `anomaly` 토픽 발행 → oee-service가 AI_ANOMALY_DETECTED로 영속화 ✅
 
 ## 개발 환경
 

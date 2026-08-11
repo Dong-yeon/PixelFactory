@@ -23,7 +23,10 @@ export function EventTimeline({ events }: { events: FactoryEvent[] }) {
             <span className="time">{formatTime(event.createdAt)}</span>
             <SeverityBadge severity={event.severity} />
             <div>
-              <div className="message">{event.message}</div>
+              <div className="message">
+                {event.eventType === 'AI_ANOMALY_DETECTED' && <span className="ai-chip">AI</span>}
+                {event.message}
+              </div>
               {event.lotNo && <span className="lot">LOT {event.lotNo}</span>}
             </div>
           </div>

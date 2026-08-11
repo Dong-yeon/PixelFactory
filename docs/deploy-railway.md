@@ -1,6 +1,6 @@
 # Railway 배포 가이드
 
-하나의 Railway 프로젝트에 5개 서비스를 올린다. 서비스 간 통신은
+하나의 Railway 프로젝트에 6개 서비스를 올린다. 서비스 간 통신은
 Railway **private network**(`<service>.railway.internal`)를 쓰고,
 외부에 노출하는 것은 oee-service(HTTP/WS)와 web(HTTP)뿐이다.
 
@@ -8,9 +8,9 @@ Railway **private network**(`<service>.railway.internal`)를 쓰고,
 [web (nginx)] ──HTTPS──▶ 방문자
       │ fetch/ws
       ▼
-[oee-service] ◀─private─ [simulator]─MQTT─▶ [mosquitto]
-      │ private                                  ▲
-      ▼                                          │
+[oee-service] ◀─private─ [simulator]─MQTT─▶ [mosquitto] ◀─MQTT─ [ai-service]
+      │ private                                  ▲                (cycle 구독,
+      ▼                                          │                 anomaly 발행)
 [PostgreSQL (Railway 관리형)]                oee-service 구독
 ```
 
@@ -53,7 +53,13 @@ oee-service에서 참조한다.
 | `MQTT_URL` | `tcp://mosquitto.railway.internal:1883` |
 | `SIM_SPEED` | `10` (이벤트 적재량과 트레이드오프 — 과금 주의) |
 
-## 5. web
+## 5. ai-service
+
+- 소스: 이 리포, **Root Directory = `ai-service`** (Dockerfile 빌드)
+- 공개 도메인 불필요.
+- 환경변수: `MQTT_URL` = `tcp://mosquitto.railway.internal:1883`
+
+## 6. web
 
 - 소스: 이 리포, **Root Directory = `web`** (Dockerfile 빌드)
 - API 오리진은 **빌드 시점 주입**이므로 Railway 서비스 설정의 build args로 넣는다:

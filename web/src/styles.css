@@ -347,6 +347,18 @@ button {
   font-size: 12px;
 }
 
+.ai-chip {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 5px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  vertical-align: 1px;
+}
+
 /* ---------- 작업지시 패널 ---------- */
 
 .wo-table {

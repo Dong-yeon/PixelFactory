@@ -62,6 +62,7 @@ public class MqttMessageHandler {
         switch (kind) {
             case "status" -> handleStatus(equipmentCode, equipmentId, json, payload);
             case "cycle" -> handleCycle(equipmentCode, equipmentId, json, payload);
+            case "anomaly" -> handleAnomaly(equipmentCode, equipmentId, json, payload);
             default -> log.debug("Ignoring unsupported message kind '{}' on topic {}", kind, topic);
         }
     }
@@ -118,6 +119,28 @@ public class MqttMessageHandler {
                 activeWorkOrder == null ? null : activeWorkOrder.getLotNo(),
                 defect ? EventSeverity.WARNING : EventSeverity.INFO,
                 (defect ? "Defect cycle completed: " : "Cycle completed: ") + equipmentCode,
+                payload
+        );
+    }
+
+    // ai-service가 발행한 anomaly — AI_ANOMALY_DETECTED로 영속화 (계약: docs/mqtt-topics.md)
+    private void handleAnomaly(String equipmentCode, Long equipmentId, JsonNode json, String payload) {
+        String anomalyType = json.path("anomalyType").asText("UNKNOWN");
+
+        WorkOrder activeWorkOrder = equipmentId == null
+                ? null
+                : workOrderService.findActiveByEquipmentId(equipmentId).orElse(null);
+
+        factoryEventService.record(
+                FactoryEventType.AI_ANOMALY_DETECTED,
+                SourceType.AI,
+                null,
+                TargetType.EQUIPMENT,
+                equipmentId,
+                activeWorkOrder == null ? null : activeWorkOrder.getId(),
+                activeWorkOrder == null ? null : activeWorkOrder.getLotNo(),
+                EventSeverity.WARNING,
+                "AI anomaly detected: " + equipmentCode + " " + anomalyType,
                 payload
         );
     }

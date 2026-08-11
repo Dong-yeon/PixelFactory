@@ -1,6 +1,6 @@
 # MQTT 토픽 계약
 
-simulator → oee-service 이벤트 백본. 브로커는 Mosquitto(로컬 1883, 인증 없음 — 로컬 한정).
+simulator/ai-service → oee-service 이벤트 백본. 브로커는 Mosquitto(로컬 1883, 인증 없음 — 로컬 한정).
 
 ## 토픽 구조
 
@@ -10,9 +10,10 @@ factory/{lineCode}/{equipmentCode}/{kind}
 
 - `lineCode`: 라인 코드 (예: `LINE-1`)
 - `equipmentCode`: 설비 코드 (예: `CNC-01`) — oee-service의 equipments 마스터와 일치해야 함
-- `kind`: `status` | `cycle`
+- `kind`: `status` | `cycle` | `anomaly`
 
-oee-service는 `factory/#`를 QoS 1로 구독한다.
+발행 주체: `status`/`cycle`은 simulator, `anomaly`는 ai-service.
+oee-service는 `factory/#`를, ai-service는 `factory/+/+/cycle`을 QoS 1로 구독한다.
 
 ## 페이로드
 
@@ -36,6 +37,18 @@ oee-service는 `factory/#`를 QoS 1로 구독한다.
 - `cycleTimeMs`: 실제 사이클 타임 — OEE Performance 계산 입력
 - `defect`: 불량 여부 — OEE Quality 계산 입력
 - 처리: `CYCLE_COMPLETED` 이벤트 기록 (defect=true → WARNING)
+
+### `anomaly` — AI 이상 감지 (ai-service 발행)
+
+```json
+{ "anomalyType": "CYCLE_TIME_SPIKE", "cycleTimeMs": 55100, "mean": 33000, "stdDev": 3400, "zScore": 6.5, "ts": "2026-08-11T12:00:00Z" }
+{ "anomalyType": "DEFECT_BURST", "defectCount": 3, "windowSize": 10, "ts": "2026-08-11T12:00:00Z" }
+```
+
+- `CYCLE_TIME_SPIKE`: 최근 30사이클 baseline 대비 z-score ≥ 3 (이상 샘플은 baseline 미반영)
+- `DEFECT_BURST`: 최근 10사이클 중 불량 ≥ 3 (발화 후 쿨다운)
+- 처리: `AI_ANOMALY_DETECTED` 이벤트 기록 (WARNING, source=AI,
+  cycle과 동일하게 IN_PROGRESS 작업지시의 workOrderId/lotNo 연결)
 
 ## OEE 계산과의 관계
 
