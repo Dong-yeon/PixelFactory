@@ -87,3 +87,10 @@ mqtt:
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+oee:
+  push-interval-ms: 5000
+  maintenance:
+    enabled: ${OEE_MAINTENANCE_ENABLED:true}
+    cron: "0 10 * * * *"
+    retention-days: ${EVENT_RETENTION_DAYS:7}

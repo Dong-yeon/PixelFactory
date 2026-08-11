@@ -93,7 +93,7 @@ public class OeeService {
         List<EquipmentOeeResponse> equipmentOees = new ArrayList<>();
 
         for (Equipment equipment : equipments) {
-            OeeInput input = buildInput(equipment, window);
+            OeeInput input = computeInput(equipment, window);
             inputs.add(input);
             equipmentOees.add(toEquipmentResponse(equipment, input));
         }
@@ -104,7 +104,7 @@ public class OeeService {
     }
 
     private EquipmentOeeResponse buildEquipmentOee(Equipment equipment, OeeWindow window) {
-        return toEquipmentResponse(equipment, buildInput(equipment, window));
+        return toEquipmentResponse(equipment, computeInput(equipment, window));
     }
 
     private EquipmentOeeResponse toEquipmentResponse(Equipment equipment, OeeInput input) {
@@ -118,7 +118,8 @@ public class OeeService {
         );
     }
 
-    private OeeInput buildInput(Equipment equipment, OeeWindow window) {
+    /** 이벤트 스트림에서 window의 OEE 입력값을 집계한다. 시간 단위 롤업도 이 메서드를 재사용한다. */
+    public OeeInput computeInput(Equipment equipment, OeeWindow window) {
         EquipmentStatus initialStatus = factoryEventRepository
                 .findFirstByTargetTypeAndTargetIdAndEventTypeAndCreatedAtLessThanOrderByCreatedAtDesc(
                         TargetType.EQUIPMENT,

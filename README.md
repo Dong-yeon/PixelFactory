@@ -63,6 +63,18 @@ npm run dev
 - `/topic/events` — FactoryEvent 실시간 스트림 (영속화 커밋 후 push)
 - `/topic/oee` — OEE 요약 스냅샷 (기본 5초 주기, `oee.push-interval-ms`)
 
+## 이벤트 롤업 / 보존 정책
+
+factory_events는 계속 쌓이므로 상시 운영을 위해 매시 10분에 유지보수가 돈다
+(`oee.maintenance.*` 설정, `POST /api/oee/maintenance/run`으로 수동 실행 가능).
+
+- **롤업**: 완료된 시간(hour)마다 설비별 OEE 입력값을 `equipment_hourly_rollups`에
+  물화 — raw 삭제 후에도 이력 지표 유지. 조회: `GET /api/oee/rollups?equipmentId=`
+- **보존**: 대량 텔레메트리(`CYCLE_COMPLETED`, `EQUIPMENT_STATUS_CHANGED`)만
+  보존기간(기본 7일, `EVENT_RETENTION_DAYS`) 경과 시 삭제.
+  작업지시 이력과 `AI_ANOMALY_DETECTED`는 보존하고, 상태 이벤트는 설비별 최신
+  1건을 남겨 OEE의 "window 직전 상태" 조회가 깨지지 않게 한다.
+
 ## 배포 (Railway)
 
 각 서비스에 Dockerfile 포함. 절차는 [docs/deploy-railway.md](docs/deploy-railway.md) 참고.

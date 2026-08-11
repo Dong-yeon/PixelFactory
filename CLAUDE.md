@@ -67,8 +67,9 @@ simulator ──MQTT──▶ [Mosquitto broker] ──▶ oee-service ──Web
 - 로컬: `infra/docker-compose.yml`로 Postgres(추후 Mosquitto 포함) 기동 후
   `services/oee-service`에서 `.\gradlew.bat bootRun` (포트 8081)
 - 배포: Railway (앱 + DB + MQTT 통합, Phase 3에서)
-- FactoryEvent는 계속 쌓이는 테이블 — 시뮬레이터 발행 주기와 이벤트 보존 정책을
-  항상 함께 고려한다 (Railway 사용량 이슈).
+- FactoryEvent는 계속 쌓이는 테이블 — 시간 단위 롤업(equipment_hourly_rollups) +
+  보존 정책(대량 텔레메트리 7일, `oee.maintenance.*`)이 매시 자동 실행된다.
+  시뮬레이터 발행 주기를 바꾸면 보존기간도 함께 고려한다 (Railway 사용량 이슈).
 
 ## 작업 규칙
 
