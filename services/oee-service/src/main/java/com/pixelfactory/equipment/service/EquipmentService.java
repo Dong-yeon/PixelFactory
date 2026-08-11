@@ -44,6 +44,10 @@ public class EquipmentService {
         return equipmentRepository.findByEquipmentCode(equipmentCode);
     }
 
+    public Optional<Equipment> findById(Long id) {
+        return equipmentRepository.findById(id);
+    }
+
     @Transactional
     public void changeStatus(Long equipmentId, EquipmentStatus status) {
         equipmentRepository.findById(equipmentId)

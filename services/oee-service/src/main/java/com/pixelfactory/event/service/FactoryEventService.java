@@ -9,6 +9,7 @@ import com.pixelfactory.event.dto.FactoryEventCreateRequest;
 import com.pixelfactory.event.dto.FactoryEventResponse;
 import com.pixelfactory.event.repository.FactoryEventRepository;
 import java.util.List;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,9 +22,14 @@ public class FactoryEventService {
     private static final int MAX_RECENT_LIMIT = 100;
 
     private final FactoryEventRepository factoryEventRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    public FactoryEventService(FactoryEventRepository factoryEventRepository) {
+    public FactoryEventService(
+            FactoryEventRepository factoryEventRepository,
+            ApplicationEventPublisher applicationEventPublisher
+    ) {
         this.factoryEventRepository = factoryEventRepository;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Transactional
@@ -41,7 +47,7 @@ public class FactoryEventService {
                 request.payloadJson()
         );
 
-        return FactoryEventResponse.from(factoryEventRepository.save(event));
+        return publishAndReturn(factoryEventRepository.save(event));
     }
 
     @Transactional
@@ -70,7 +76,16 @@ public class FactoryEventService {
                 payloadJson
         );
 
-        return FactoryEventResponse.from(factoryEventRepository.save(event));
+        return publishAndReturn(factoryEventRepository.save(event));
+    }
+
+    // 저장 직후 FactoryEventRecordedEvent를 publish한다. 리스너는 기본적으로
+    // @TransactionalEventListener(AFTER_COMMIT)로 구독하므로, 여기서 커밋을 기다리지 않고
+    // publish해도 실제 처리(실시간 push 등)는 트랜잭션 커밋 이후에만 일어난다.
+    private FactoryEventResponse publishAndReturn(FactoryEvent savedEvent) {
+        FactoryEventResponse response = FactoryEventResponse.from(savedEvent);
+        applicationEventPublisher.publishEvent(new FactoryEventRecordedEvent(response));
+        return response;
     }
 
     public List<FactoryEventResponse> getRecent(Integer limit) {

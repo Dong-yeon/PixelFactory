@@ -2,6 +2,8 @@ package com.pixelfactory.workorder.service;
 
 import com.pixelfactory.common.exception.BusinessException;
 import com.pixelfactory.common.exception.ErrorCode;
+import com.pixelfactory.equipment.domain.EquipmentStatus;
+import com.pixelfactory.equipment.service.EquipmentService;
 import com.pixelfactory.event.domain.EventSeverity;
 import com.pixelfactory.event.domain.FactoryEventType;
 import com.pixelfactory.event.domain.SourceType;
@@ -14,6 +16,7 @@ import com.pixelfactory.workorder.dto.WorkOrderCreateRequest;
 import com.pixelfactory.workorder.dto.WorkOrderHoldRequest;
 import com.pixelfactory.workorder.dto.WorkOrderResponse;
 import com.pixelfactory.workorder.repository.WorkOrderRepository;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -25,13 +28,16 @@ public class WorkOrderService {
 
     private final WorkOrderRepository workOrderRepository;
     private final FactoryEventService factoryEventService;
+    private final EquipmentService equipmentService;
 
     public WorkOrderService(
             WorkOrderRepository workOrderRepository,
-            FactoryEventService factoryEventService
+            FactoryEventService factoryEventService,
+            EquipmentService equipmentService
     ) {
         this.workOrderRepository = workOrderRepository;
         this.factoryEventService = factoryEventService;
+        this.equipmentService = equipmentService;
     }
 
     @Transactional
@@ -93,12 +99,12 @@ public class WorkOrderService {
                 "Work order started: " + workOrder.getWorkOrderNo(),
                 workOrderPayload(workOrder)
         );
-        recordEquipmentEvent(
+        changeEquipmentStatus(
                 workOrder,
-                FactoryEventType.EQUIPMENT_STATUS_CHANGED,
+                EquipmentStatus.RUNNING,
+                "WORK_ORDER_STARTED",
                 EventSeverity.INFO,
-                "Equipment changed to RUNNING for work order: " + workOrder.getWorkOrderNo(),
-                "{\"equipmentStatus\":\"RUNNING\"}"
+                "Equipment changed to RUNNING for work order: " + workOrder.getWorkOrderNo()
         );
         return WorkOrderResponse.from(workOrder);
     }
@@ -133,12 +139,12 @@ public class WorkOrderService {
                 "Work order on hold: " + workOrder.getWorkOrderNo(),
                 holdPayload(workOrder)
         );
-        recordEquipmentEvent(
+        changeEquipmentStatus(
                 workOrder,
-                FactoryEventType.EQUIPMENT_STATUS_CHANGED,
+                EquipmentStatus.QUALITY_HOLD,
+                request.reason(),
                 EventSeverity.WARNING,
-                "Equipment changed to QUALITY_HOLD for work order: " + workOrder.getWorkOrderNo(),
-                "{\"equipmentStatus\":\"QUALITY_HOLD\"}"
+                "Equipment changed to QUALITY_HOLD for work order: " + workOrder.getWorkOrderNo()
         );
         return WorkOrderResponse.from(workOrder);
     }
@@ -230,15 +236,20 @@ public class WorkOrderService {
         );
     }
 
-    private void recordEquipmentEvent(
+    // Applies an equipment status change triggered by a work order action (start/hold) and
+    // records it as EQUIPMENT_STATUS_CHANGED with the same payload schema as the MQTT-sourced
+    // path in MqttMessageHandler (see docs/mqtt-topics.md) so downstream OEE calculation can
+    // parse both producers uniformly.
+    private void changeEquipmentStatus(
             WorkOrder workOrder,
-            FactoryEventType eventType,
+            EquipmentStatus status,
+            String reason,
             EventSeverity severity,
-            String message,
-            String payloadJson
+            String message
     ) {
+        equipmentService.changeStatus(workOrder.getEquipmentId(), status);
         factoryEventService.record(
-                eventType,
+                FactoryEventType.EQUIPMENT_STATUS_CHANGED,
                 SourceType.WORK_ORDER,
                 workOrder.getId(),
                 TargetType.EQUIPMENT,
@@ -247,8 +258,15 @@ public class WorkOrderService {
                 workOrder.getLotNo(),
                 severity,
                 message,
-                payloadJson
+                equipmentStatusPayload(status, reason)
         );
+    }
+
+    private String equipmentStatusPayload(EquipmentStatus status, String reason) {
+        return "{\"status\":\"" + status
+                + "\",\"reason\":\"" + sanitizeJsonValue(reason)
+                + "\",\"ts\":\"" + Instant.now()
+                + "\"}";
     }
 
     private String workOrderPayload(WorkOrder workOrder) {

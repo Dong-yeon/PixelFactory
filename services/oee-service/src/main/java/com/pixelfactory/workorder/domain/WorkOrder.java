@@ -45,6 +45,9 @@ public class WorkOrder extends BaseEntity {
     @Column(nullable = false)
     private Integer plannedQty;
 
+    // 작업지시 완료 시 사람이 보고하는 완료 수량 — 검사/마감 워크플로용.
+    // OEE Quality 계산의 소스가 아니다. OEE Quality는 FactoryEvent(CYCLE_COMPLETED)의
+    // defect 비율에서만 산출한다 (docs/mqtt-topics.md 참고).
     @Column(nullable = false)
     private Integer producedQty;
 
@@ -99,6 +102,7 @@ public class WorkOrder extends BaseEntity {
         this.holdReason = null;
     }
 
+    // producedQty/defectQty는 완료보고 스냅샷일 뿐, OEE Quality 소스가 아니다 (위 필드 주석 참고).
     public void completeProduction(int producedQty, int defectQty) {
         this.status = WorkOrderStatus.INSPECTION_WAITING;
         this.producedQty = producedQty;
